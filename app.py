@@ -12,17 +12,63 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import plotly.graph_objects as go
 import json 
+import datetime
+
+
+def parse_meta_json():
+  
+  with open('temporary.json', 'r') as f:
+    s = f.read()
+
+  meta_json = json.loads(s)
+  stock_to_symbol = meta_json["Stocks"]
+  date = meta_json["Date"]
+  today = datetime.date.today()
+  year, month, day = map(int, date.split('-'))
+  date_updated = datetime.date(year=year, month=month, day=day)
+
+  if date_updated!=today:
+    stock = meta_json["Stocks"]
+    for key in stock:
+      stock[key][1] = 0
+    
+    year, month, day = today.year, today.month, today.day
+
+    date = f'{year}-{month}-{day}'
+    new_meta_info = {}
+    new_meta_info["Date"] = date 
+    new_meta_info["Stocks"] = stock
+  
+    with open('temporary.json', 'w') as f:
+      f.write(json.dumps(new_meta_info))
+
+    stock_to_symbol = stock
+
+  return stock_to_symbol
+
+
+def update_meta_json(option):
+  stocks = parse_meta_json()
+  today = datetime.date.today()
+  year, month, day = today.year, today.month, today.day
+  date = f'{year}-{month}-{day}'
+  
+  meta_data = {}
+  meta_data["Date"] = date 
+  stocks[option][1] = 1 
+  meta_data["Stocks"] = stocks 
+
+  with open('temporary.json', 'w') as f:
+    f.write(json.dumps(meta_data))
+
 
 hello = st.sidebar.text('Home')
 pwd = st.sidebar.text_input("Password", value="", type="password") 
 
 if pwd == 'whatup': 
   st.sidebar.caption = 'Hello'
-  with open('stock_names_to_symbols.json', 'r') as f:
-    s = f.read()
-
-  stock_to_symbol = json.loads(s)
-
+  
+  stock_to_symbol = parse_meta_json()
 
   option = st.selectbox(
       'Pick Stock',
@@ -31,15 +77,31 @@ if pwd == 'whatup':
 
   # stock_to_symbol = {'Relicance Industries Ltd.':'RELIANCE', 'Adani Ports': 'ADANIPORTS', 'Tata Consultancy Services': 'TCS', 'Larsen and Toubro': 'LT', 'Hindustan Unilever Ltd.': 'HINDUNILVR'}
 
-  symbol = stock_to_symbol[option]
-  url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&outputsize=full&symbol=BSE:{symbol}&datatype=csv&apikey=98O9B0WMAMRDDX0G'
-  df = pd.read_csv(url)
-  df['timestamp'] = pd.to_datetime(df.timestamp)
-  df = df.sort_values(by="timestamp")
-  tech_df = df.copy() 
-  print(df.head())
-  print(df.tail())
-  # st.line_chart(data=(df['MACD'], df['MACD_Signal']))
+  symbol = stock_to_symbol[option][0]
+  print('Here')
+  if stock_to_symbol[option][1]:
+    print('Didn\'t create again')
+    st.write('Didn\'t create again.')
+    df = pd.read_csv(f'files/{symbol}.csv')
+    df['timestamp'] = pd.to_datetime(df.timestamp)
+    df = df.sort_values(by="timestamp")
+    tech_df = df.copy() 
+  else:
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&outputsize=full&symbol=BSE:{symbol}&datatype=csv&apikey=98O9B0WMAMRDDX0G'
+    df = pd.read_csv(url)
+    
+    with open(f'files/{symbol}.csv', 'w') as f:
+      f.write(' ')
+    
+    df['timestamp'] = pd.to_datetime(df.timestamp)
+    df = df.sort_values(by="timestamp")
+    tech_df = df.copy() 
+    print(df.head())
+    print(df.tail())
+    
+    df.to_csv(f'files/{symbol}.csv')
+    update_meta_json(option)
+    # st.line_chart(data=(df['MACD'], df['MACD_Signal']))
   days = 10
   days = st.slider('# days to invest', min_value=5, max_value=60, value=50, step=5)
 
