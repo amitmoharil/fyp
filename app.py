@@ -61,6 +61,27 @@ def update_meta_json(option):
   with open('temporary.json', 'w') as f:
     f.write(json.dumps(meta_data))
 
+st.markdown("""
+<style>
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 
 hello = st.sidebar.text('Home')
 pwd = st.sidebar.text_input("Password", value="", type="password") 
@@ -120,9 +141,15 @@ if pwd == 'whatup':
   tech_df['rsi'] = real
   tech_df.head()
 
+  # Stochastic Oscillator 
+  slow_k, slow_d = talib.STOCH(df['high'], df['low'], df['close'])
+  tech_df['stochastic_k'] = slow_k
+  tech_df['stochastic_d'] = slow_d 
+  tech_df.head()
+
   tech_df_1 = tech_df.dropna().copy()
   tech_df_1['returns'] = tech_df_1['close'].pct_change(days).shift(-1*days)
-  list_of_features = ['close', 'open', 'high', 'low', 'volume', 'macd', 'bb_upper', 'bb_lowerband', 'macd_signal', 'macdhist', 'rsi']
+  list_of_features = ['close', 'open', 'high', 'low', 'volume', 'macd', 'bb_upper', 'bb_lowerband', 'macd_signal', 'macdhist', 'rsi', 'stochastic_k', 'stochastic_d']
   tech_df_1.dropna(inplace=True)
   X = tech_df_1[list_of_features]
 
@@ -171,7 +198,7 @@ if pwd == 'whatup':
     if calls[i] == 'Sell':
       if len(units)!=0:
         k = 0
-        while units[k] <= i-days:
+        while k<len(units) and units[k] <= i-days:
           profit += closes[i] - closes[units[k]]
           returns = returns[0]+closes[i],returns[1]+1
           investments_remaining = investments_remaining[0] - closes[units[k]], investments_remaining[1]-1
@@ -195,13 +222,51 @@ if pwd == 'whatup':
   # temp_df = pred_df[(pred_df.Call=="Sell")]
   # plt.plot(temp_df['Timestamp'], temp_df['Closes'], 'bo', color='blue')
 
-  st.write('{:30}{}'.format('Profit till now: ', profit))
-  st.write('{:30}{}'.format('Investments remaining: ', investments_remaining))
-  st.write('Investment: ', investments)
-  st.write('Returns: ', returns)
-  st.write( f'Profit: {round((returns[0]-investments[0]) / investments[0]* 100,2)}% in {len(y_pred_temp)} days')
-  st.write('Maximum Investment: ', maximum)
+  # st.write('{:30}{}'.format('Profit till now: ', profit))
+  # st.write('{:30}{}'.format('Investments remaining: ', investments_remaining))
+  # st.write('Investment: ', investments)
+  # st.write('Returns: ', returns)
+  # st.write( f'Profit: {round((returns[0]-investments[0]) / investments[0]* 100,2)}% in {len(y_pred_temp)} days')
+  # st.write('Maximum Investment: ', maximum)
 
+  st.markdown(f'''
+    <table>
+      <tr>
+        <th>Attribute</th>
+        <th>Value</th>
+      </tr>
+      <tr>
+        <td>Profit Till Now</td>
+        <td>Rs. {round(profit,2)}</td>
+      </tr>
+      
+      <tr>
+        <td>Investments remaining to square off</td>
+        <td>Rs. {round(investments_remaining[0], 2)} | {investments_remaining[1]} units </td>
+      </tr>
+
+      <tr>
+        <td>Total Investments</td>
+        <td>Rs. {round(investments[0],2)} | {investments[1]} units </td>
+      </tr>
+
+      <tr>
+        <td>Total Returns</td>
+        <td>Rs. {round(returns[0],2)} | {returns[1]} units </td>
+      </tr>
+
+      <tr>
+        <td>Profit percentage</td>
+        <td>{round((returns[0]-investments[0]) / investments[0]* 100,2)}% in {len(y_pred_temp)} days</td>
+      </tr> 
+      <tr>
+        <td>Maximum Investment</td>
+        <td>Rs. {maximum}</td>
+      </tr>
+      
+        
+    </table>
+  ''', unsafe_allow_html=True)
 
   fig = px.line(pred_df, x='Timestamp', y=['Closes'])
   fig.update_traces(line_color='#456987')
