@@ -96,8 +96,6 @@ if pwd == 'whatup':
       tuple(stock_to_symbol.keys())
   )
 
-  # stock_to_symbol = {'Relicance Industries Ltd.':'RELIANCE', 'Adani Ports': 'ADANIPORTS', 'Tata Consultancy Services': 'TCS', 'Larsen and Toubro': 'LT', 'Hindustan Unilever Ltd.': 'HINDUNILVR'}
-
   symbol = stock_to_symbol[option][0]
   if stock_to_symbol[option][1]:
     df = pd.read_csv(f'files/{symbol}.csv')
@@ -134,6 +132,7 @@ if pwd == 'whatup':
   tech_df['macd'] = macd 
   tech_df['macd_signal'] = macdsignal
   tech_df['macdhist'] = macdhist
+  tech_df['macd_useful'] = tech_df['macd']/tech_df['macd_signal']
   tech_df.head()
 
   # RSI 
@@ -149,15 +148,17 @@ if pwd == 'whatup':
 
   tech_df_1 = tech_df.dropna().copy()
   tech_df_1['returns'] = tech_df_1['close'].pct_change(days).shift(-1*days)
-  list_of_features = ['close', 'open', 'high', 'low', 'volume', 'macd', 'bb_upper', 'bb_lowerband', 'macd_signal', 'macdhist', 'rsi', 'stochastic_k', 'stochastic_d']
+  list_of_features = ['close', 'volume', 'bb_upper', 'bb_lowerband', 'macd_useful', 'macdhist', 'rsi', 'stochastic_k', 'stochastic_d']
   tech_df_1.dropna(inplace=True)
   X = tech_df_1[list_of_features]
 
   y = np.where(tech_df_1.returns > 0, 1, 0)
 
-  X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=423)
-
-  treeClassifier = DecisionTreeClassifier(max_depth=7)
+  # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=423)
+  index = int(0.7*len(X))
+  X_train, X_test, y_train, y_test = X[:index], X[index:], y[:index], y[index:]
+  
+  treeClassifier = DecisionTreeClassifier(max_depth=8,  min_samples_split=30)
   treeClassifier.fit(X_train, y_train)
   y_pred = treeClassifier.predict(X_test)
 
@@ -172,12 +173,13 @@ if pwd == 'whatup':
   print(report)
 
   y_pred_temp = y_pred[-100:]
-  X_closes = tech_df['close'].iloc[-1*len(y_pred_temp):,]
+  print(X_test['close'])
+  X_closes = X_test['close'].iloc[-1*len(y_pred_temp):,]
   pred_df = pd.DataFrame()
-  pred_df['Timestamp'] = tech_df['timestamp'].iloc[-1*len(y_pred_temp):, ]
+  pred_df['Timestamp'] = tech_df_1['timestamp'].iloc[-1*len(y_pred_temp):, ]
   pred_df['Closes'] = X_closes
   pred_df['Call'] = np.where(y_pred_temp==0, 'Sell', 'Buy')
-  pred_df.tail(200)
+  print(pred_df.tail)
 
   closes = [] 
   calls = []
@@ -261,7 +263,7 @@ if pwd == 'whatup':
       </tr> 
       <tr>
         <td>Maximum Investment</td>
-        <td>Rs. {maximum}</td>
+        <td>Rs. {round(maximum,2)}</td>
       </tr>
       
         
