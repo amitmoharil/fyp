@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 import json 
 import datetime
 
-
+# Utility function to parse the meta json file and get stock symbols. 
 def parse_meta_json():
   
   with open('temporary.json', 'r') as f:
@@ -46,7 +46,7 @@ def parse_meta_json():
 
   return stock_to_symbol
 
-
+# Function to update the meta json file after downloading and storing a csv from the API call. 
 def update_meta_json(option):
   stocks = parse_meta_json()
   today = datetime.date.today()
@@ -61,6 +61,7 @@ def update_meta_json(option):
   with open('temporary.json', 'w') as f:
     f.write(json.dumps(meta_data))
 
+# Used to set the CSS style for the HTML table.
 st.markdown("""
 <style>
 table {
@@ -97,11 +98,13 @@ if pwd == 'whatup':
   )
 
   symbol = stock_to_symbol[option][0]
+  # If this value is 1 it means that we have downloaded the csv previously today and we can use that. 
   if stock_to_symbol[option][1]:
     df = pd.read_csv(f'files/{symbol}.csv')
     df['timestamp'] = pd.to_datetime(df.timestamp)
     df = df.sort_values(by="timestamp")
     tech_df = df.copy() 
+
   else:
     url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&outputsize=full&symbol=BSE:{symbol}&datatype=csv&apikey=98O9B0WMAMRDDX0G'
     df = pd.read_csv(url)
@@ -144,11 +147,12 @@ if pwd == 'whatup':
   slow_k, slow_d = talib.STOCH(df['high'], df['low'], df['close'])
   tech_df['stochastic_k'] = slow_k
   tech_df['stochastic_d'] = slow_d 
+  tech_df['useful_stochastic'] = slow_k/slow_d
   tech_df.head()
 
   tech_df_1 = tech_df.dropna().copy()
   tech_df_1['returns'] = tech_df_1['close'].pct_change(days).shift(-1*days)
-  list_of_features = ['close', 'volume', 'bb_upper', 'bb_lowerband', 'macd_useful', 'macdhist', 'rsi', 'stochastic_k', 'stochastic_d']
+  list_of_features = ['close', 'volume', 'bb_upper', 'bb_lowerband', 'macd_useful', 'macdhist', 'rsi', 'stochastic_k', 'stochastic_d', 'useful_stochastic']
   tech_df_1.dropna(inplace=True)
   X = tech_df_1[list_of_features]
 
