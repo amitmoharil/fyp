@@ -5,10 +5,6 @@ import talib
 import pandas as pd 
 from sklearn.tree import DecisionTreeClassifier
 import numpy as np 
-import matplotlib.pyplot as plt 
-import graphviz
-from sklearn import tree
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import plotly.graph_objects as go
 import json 
@@ -154,6 +150,7 @@ if pwd == 'whatup':
     tech_df_1 = df.copy() 
   else:
     # Bollinger Bands 
+    print(df.tail())
     tech_df = df.copy() 
     upperband, middleband, lowerband = talib.BBANDS(df['close'], timeperiod=5, nbdevup=2, nbdevdn=2, matype=0)
     tech_df['bb_upper'] = upperband 
@@ -185,7 +182,7 @@ if pwd == 'whatup':
     tech_df_1.dropna(inplace=True)
 
     # Save tech indicators 
-    tech_df_1.to_csv(f'files/{symbol}.csv')
+    # tech_df_1.to_csv(f'files/{symbol}.csv')
     # print('Here, tech updating!')
     # update_meta_json(option, indicators=True)
 
@@ -205,7 +202,7 @@ if pwd == 'whatup':
   # data = tree.export_graphviz(treeClassifier, filled=True, feature_names=list_of_features, class_names = np.array(['0', '1']))
   # g = graphviz.Source(data)
 
-  report = classification_report(y_test, y_pred)
+  report = classification_report(y_test, y_pred, output_dict=True)
   print(report)
 
   y_pred_temp = y_pred[-100:]
@@ -345,4 +342,7 @@ if pwd == 'whatup':
   )
 
   st.plotly_chart(fig3)
-  st.write(report)
+  report["Sell"] = report["0"]
+  report["Buy"] = report["1"]
+  del report["0"], report["1"]
+  st.table(pd.DataFrame(report))

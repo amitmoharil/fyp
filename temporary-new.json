@@ -2,9 +2,15 @@
     "Date": "2021-12-8",
     "Stocks": [
         {
+            "Name": "Tata Consultancy Services",
+            "Symbol": "TCS",
+            "Data": 1,
+            "Indicators": 0
+        },
+        {
             "Name": "Relicance Industries Ltd.",
             "Symbol": "RELIANCE",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
@@ -14,15 +20,9 @@
             "Indicators": 0
         },
         {
-            "Name": "Tata Consultancy Services",
-            "Symbol": "TCS",
-            "Data": 0,
-            "Indicators": 0
-        },
-        {
             "Name": "Larsen & Toubro Infotech Ltd",
             "Symbol": "LT",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
@@ -40,7 +40,7 @@
         {
             "Name": "BHARAT HEAVY ELECTRICAL",
             "Symbol": "500103",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
