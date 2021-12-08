@@ -142,19 +142,19 @@ if pwd == 'whatup':
 
     # Save Data. 
     update_meta_json(option, data=True)
-    tech_df = df.copy() 
     
     
     # st.line_chart(data=(df['MACD'], df['MACD_Signal']))
   
-  days = 10
   days = st.slider('# days to invest', min_value=5, max_value=60, value=35, step=5)
+  print(days)
 
+  # For now this must never be true. 
   if not calculate_indicators:
     tech_df_1 = df.copy() 
-  
   else:
     # Bollinger Bands 
+    tech_df = df.copy() 
     upperband, middleband, lowerband = talib.BBANDS(df['close'], timeperiod=5, nbdevup=2, nbdevdn=2, matype=0)
     tech_df['bb_upper'] = upperband 
     tech_df['bb_middle'] = middleband 
@@ -186,8 +186,8 @@ if pwd == 'whatup':
 
     # Save tech indicators 
     tech_df_1.to_csv(f'files/{symbol}.csv')
-    print('Here, tech updating!')
-    update_meta_json(option, indicators=True)
+    # print('Here, tech updating!')
+    # update_meta_json(option, indicators=True)
 
   list_of_features = ['close', 'volume', 'bb_upper', 'bb_lowerband', 'macd_useful', 'macdhist', 'rsi', 'stochastic_k', 'stochastic_d', 'useful_stochastic']
   X = tech_df_1[list_of_features]
@@ -202,8 +202,8 @@ if pwd == 'whatup':
   y_pred = treeClassifier.predict(X_test)
 
 
-  data = tree.export_graphviz(treeClassifier, filled=True, feature_names=list_of_features, class_names = np.array(['0', '1']))
-  g = graphviz.Source(data)
+  # data = tree.export_graphviz(treeClassifier, filled=True, feature_names=list_of_features, class_names = np.array(['0', '1']))
+  # g = graphviz.Source(data)
 
   report = classification_report(y_test, y_pred)
   print(report)
@@ -214,7 +214,6 @@ if pwd == 'whatup':
   pred_df['Timestamp'] = tech_df_1['timestamp'].iloc[-1*len(y_pred_temp):, ]
   pred_df['Closes'] = X_closes
   pred_df['Call'] = np.where(y_pred_temp==0, 'Sell', 'Buy')
-  
   closes = [] 
   calls = []
 
@@ -304,10 +303,12 @@ if pwd == 'whatup':
     </table>
   ''', unsafe_allow_html=True)
 
+
+  dcm = {'Buy':'#618a4d', 'Sell':'#ff1c1c'}
   fig = px.line(pred_df, x='Timestamp', y=['Closes'])
   fig.update_traces(line_color='#456987')
   color_dm = {''}
-  fig2 = px.scatter(pred_df, x="Timestamp", y="Closes", color="Call")
+  fig2 = px.scatter(pred_df, x="Timestamp", y="Closes", color="Call", color_discrete_map=dcm)
   fig3 = go.Figure(data=fig.data+fig2.data)
   fig3.update_layout(
       xaxis=dict(
