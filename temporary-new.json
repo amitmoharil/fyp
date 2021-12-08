@@ -1,6 +1,11 @@
 {
-    "Date": "2021-12-8",
-    "Stocks": [
+    "Date": "2021-12-9",
+    "Stocks": [{
+            "Name": "Relicance Industries Ltd.",
+            "Symbol": "RELIANCE",
+            "Data": 1,
+            "Indicators": 0
+        },
         {
             "Name": "Tata Consultancy Services",
             "Symbol": "TCS",
@@ -8,27 +13,21 @@
             "Indicators": 0
         },
         {
-            "Name": "Relicance Industries Ltd.",
-            "Symbol": "RELIANCE",
-            "Data": 1,
-            "Indicators": 0
-        },
-        {
             "Name": "Adani Ports",
             "Symbol": "ADANIPORTS",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0
         },
         {
             "Name": "Larsen & Toubro Infotech Ltd",
             "Symbol": "LT",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0
         },
         {
             "Name": "Hindustan Unilever Ltd.",
             "Symbol": "HINDUNILVR",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0
         },
         {
@@ -40,7 +39,7 @@
         {
             "Name": "BHARAT HEAVY ELECTRICAL",
             "Symbol": "500103",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0
         },
         {
