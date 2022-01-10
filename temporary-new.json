@@ -1,15 +1,16 @@
 {
-    "Date": "2021-12-9",
-    "Stocks": [{
+    "Date": "2022-1-8",
+    "Stocks": [
+        {
             "Name": "Relicance Industries Ltd.",
             "Symbol": "RELIANCE",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0
         },
         {
             "Name": "Tata Consultancy Services",
             "Symbol": "TCS",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0
         },
         {
