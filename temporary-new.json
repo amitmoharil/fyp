@@ -1,6 +1,7 @@
 {
-    "Date": "2021-12-9",
-    "Stocks": [{
+    "Date": "2022-1-11",
+    "Stocks": [
+        {
             "Name": "Relicance Industries Ltd.",
             "Symbol": "RELIANCE",
             "Data": 1,
@@ -9,43 +10,43 @@
         {
             "Name": "Tata Consultancy Services",
             "Symbol": "TCS",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0
         },
         {
             "Name": "Adani Ports",
             "Symbol": "ADANIPORTS",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
             "Name": "Larsen & Toubro Infotech Ltd",
             "Symbol": "LT",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
             "Name": "Hindustan Unilever Ltd.",
             "Symbol": "HINDUNILVR",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
             "Name": "HCL Technologies Ltd.",
             "Symbol": "HCLTECH",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
             "Name": "BHARAT HEAVY ELECTRICAL",
             "Symbol": "500103",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
             "Name": "AMARAJA BATTERIES",
             "Symbol": "AMARAJABAT",
-            "Data": 0,
+            "Data": 1,
             "Indicators": 0
         },
         {
