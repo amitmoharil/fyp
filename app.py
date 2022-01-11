@@ -1,15 +1,17 @@
 import streamlit as st 
 import pandas as pd 
 import plotly.express as px
-from streamlit.type_util import data_frame_to_bytes 
 import talib 
 import pandas as pd 
 from sklearn.tree import DecisionTreeClassifier
 import numpy as np 
+import graphviz
+from sklearn import tree
 from sklearn.metrics import classification_report
 import plotly.graph_objects as go
 import json 
 import datetime
+from sklearn.model_selection import train_test_split
 
 
 # Utility function to parse the meta json file and get stock symbols. 
@@ -118,7 +120,8 @@ def plot_calls(df):
   st.plotly_chart(fig3)
 
 # Used to set the CSS style for the HTML table.
-st.markdown("""
+st.markdown(
+"""
 <style>
 table {
   font-family: arial, sans-serif;
@@ -143,7 +146,7 @@ tr:nth-child(even) {
 hello = st.sidebar.text('Home')
 pwd = st.sidebar.text_input("Password", value="", type="password") 
 
-  
+
 stock_to_symbol = parse_meta_json()
 
 option = st.selectbox(
@@ -213,41 +216,52 @@ else:
   slow_k, slow_d = talib.STOCH(df['high'], df['low'], df['close'])
   tech_df['stochastic_k'] = slow_k
   tech_df['stochastic_d'] = slow_d 
-  tech_df['useful_stochastic'] = slow_k/slow_d
+  tech_df['stochastic_useful'] = slow_k/slow_d
 
   # MA
   ma = talib.MA(tech_df['close'], timeperiod=44)
-  tech_df['ma_44'] = ma
+  tech_df['ma_44'] = ma 
+  tech_df['useful_ma_44'] = tech_df['close'] - ma
+
+  # OBV 
+  tech_df['obv'] = talib.OBV(df['close'], df['volume'])
+
+  # ATR 
+  tech_df['ATR'] = talib.ATR(df['high'], df['low'], df['close'], timeperiod=14)
 
   tech_df_1 = tech_df.dropna().copy()
   tech_df_1['returns'] = tech_df_1['close'].pct_change(days).shift(-1*days)
   tech_df_1.dropna(inplace=True)
 
 # Creating a list of features to pass to the decision tree. 
-list_of_features = ['close', 'volume', 'bb_upper', 'bb_lowerband', 'macd_useful', 'macdhist', 'rsi', 'useful_stochastic', 'ma_44']
-X = tech_df_1[list_of_features]
-tech_df_1['Calls'] = np.where(tech_df_1.returns > 0, 'Buy', 'Sell')
-y = np.where(tech_df_1.returns > 0, 1, 0)
+list_of_features = ['ATR', 'macd_useful', 'bb_upper', 'bb_lowerband', 'macdhist', 'rsi', 'stochastic_useful', 'useful_ma_44', 'obv']
+tech_df_1.dropna(inplace=True)
+index = int(0.8*len(tech_df_1))
+X = tech_df_1[list_of_features].iloc[:index]
+y = np.where(tech_df_1.returns > 0, 1, 0)[:index]
+tech_df_1['Calls'] = np.where(tech_df_1.returns > 0, 1, 0)
+print(tech_df_1.Calls.value_counts())
 
 # Splitting training and testing datasets.
-index = int(0.7*len(X))
-X_train, X_test, y_train, y_test = X[:index], X[index:], y[:index], y[index:]
+X_train, X_test, y_train, y_test  = train_test_split(X, y, test_size=0.3, random_state=45)
 
+# Creating and Fitting Decision Tree Classifier
 treeClassifier = DecisionTreeClassifier(min_samples_split=30, max_depth=15)
 treeClassifier.fit(X_train, y_train)
 y_pred = treeClassifier.predict(X_test)
 
+
 # Printing the accuracy, precision, recall. 
 report = classification_report(y_test, y_pred, output_dict=True)
-print(report)
 
 # Profit calculation 
-y_pred_temp = y_pred[-100:]
-X_closes = X_test['close'].iloc[-1*len(y_pred_temp):,]
+y_pred_temp = treeClassifier.predict(tech_df_1[list_of_features][index:])
+X_closes = tech_df_1['close'].iloc[index:]
 pred_df = pd.DataFrame()
 pred_df['timestamp'] = tech_df_1['timestamp'].iloc[-1*len(y_pred_temp):, ]
 pred_df['close'] = X_closes
 pred_df['Calls'] = np.where(y_pred_temp==0, 'Sell', 'Buy')
+
 closes = [] 
 calls = []
 
@@ -283,9 +297,6 @@ for i in range(len(X_closes)):
   maximum = max(maximum, sum(map(lambda x: closes[x], units)))
 
 returns = returns[0] + closes[-1]*investments_remaining[1], returns[1]+investments_remaining[1]
-print('Profit till now: ', profit)
-print('Investments remaining: ', investments_remaining)
-
 
 st.markdown(f'''
   <table>
@@ -326,13 +337,41 @@ st.markdown(f'''
   </table>
 ''', unsafe_allow_html=True)
 
+
+tech_df_1['Calls'] = np.where(tech_df_1['Calls']==0, 'Sell', 'Buy')
 df = tech_df_1[:index]
 plot_calls(df)
 plot_calls(pred_df)
 
-
-tech_df_2 = tech_df.dropna().copy()
 report["Sell"] = report["0"]
 report["Buy"] = report["1"]
 del report["0"], report["1"]
+st.table(pd.DataFrame(report))
+
+# Trying to compare analyse separation of calls. 
+col1 = st.selectbox(
+    'Pick Feature 1',
+    tuple(list(tech_df_1.columns)[2:-1])
+)
+
+col2 = st.selectbox(
+    'Pick Feature 2',
+    tuple(list(tech_df_1.columns)[2:-1])
+)
+
+col3 = st.selectbox(
+    'Pick Feature 3',
+    tuple(list(tech_df_1.columns)[2:-1])
+)
+
+fig = px.scatter_3d(data_frame=tech_df_1, x=col1, y=col2, z=col3, color='Calls')
+st.plotly_chart(fig)
+
+# Plotting the Decision Tree 
+# Keeping a fixed depth - otherwise too big. 
+# data = tree.export_graphviz(treeClassifier, filled=True, feature_names=list_of_features, class_names = {0:'Sell', 1:'Buy'}, out_file=None, max_depth=3)
+# st.graphviz_chart(data, use_container_width=True)
+
+# Report for the 20% of the data we did neither training or testing on. 
+report = classification_report(tech_df_1['Calls'][index:], pred_df['Calls'], output_dict=True)
 st.table(pd.DataFrame(report))
