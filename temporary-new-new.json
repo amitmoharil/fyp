@@ -1,5 +1,5 @@
 {
-    "Date": "2022-4-9",
+    "Date": "2021-04-07",
     "Stocks": [
         {
             "Name": "GMR Infrastructure Limited",
@@ -879,7 +879,7 @@
         {
             "Name": "Starcom Information Technology Ltd",
             "Symbol": "531616",
-            "Data": 1,
+            "Data": 0,
             "Indicators": 0,
             "Industry": "IT Consulting & Software"
         },
