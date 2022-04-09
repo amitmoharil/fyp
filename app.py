@@ -1,3 +1,9 @@
+'''
+1. Clustering youtube videos - playlist 
+2. Stock - values seen before 
+3. 
+'''
+
 import streamlit as st 
 import pandas as pd 
 import plotly.express as px
@@ -24,7 +30,7 @@ def parse_meta_json():
   stocks = meta_json["Stocks"]
   stock_to_symbol = dict() 
   for stock in stocks:
-    stock_to_symbol[stock["Name"]] = {"Symbol": stock["Symbol"], "Data": stock["Data"], "Indicators": stock["Indicators"]}
+    stock_to_symbol[stock["Name"]] = {"Symbol": stock["Symbol"], "Data": stock["Data"], "Indicators": stock["Indicators"], "Industry": stock["Industry"]}
 
   date = meta_json["Date"]
   today = datetime.date.today()
@@ -78,7 +84,7 @@ def update_meta_json(option, data=False, indicators=False):
 
 # Printing Buy/Sell calls to visualise where exactly we are buying or selling.
 def plot_calls(df):
-  dcm = {'Buy':'#618a4d', 'Sell':'#ff1c1c'}
+  dcm = {'Buy':'#618a4d', 'Sell':'#0000ff'}
   fig = px.line(df, x='timestamp', y=['close'])
   fig.update_traces(line_color='#456987')
   fig2 = px.scatter(df, x="timestamp", y="close", color="Calls", color_discrete_map=dcm)
@@ -151,7 +157,7 @@ stock_to_symbol = parse_meta_json()
 
 option = st.selectbox(
     'Pick Stock',
-    tuple(stock_to_symbol.keys())
+    tuple(sorted(stock_to_symbol.keys()))
 )
 
 symbol = stock_to_symbol[option]["Symbol"]
@@ -186,8 +192,11 @@ else:
   
   # st.line_chart(data=(df['MACD'], df['MACD_Signal']))
 
-days = st.slider('# days to invest', min_value=5, max_value=60, value=35, step=5)
+days = st.slider('# Days to Invest', min_value=5, max_value=60, value=35, step=5)
 print(days)
+
+ltp = df.at[df.index[-1], 'close']
+amount_to_invest = st.number_input('Amount to Invest', min_value=0.0, max_value=1000000.0, value=ltp, step=0.01)
 
 # For now this must never be true. 
 if not calculate_indicators:
@@ -231,12 +240,13 @@ else:
 
   tech_df_1 = tech_df.dropna().copy()
   tech_df_1['returns'] = tech_df_1['close'].pct_change(days).shift(-1*days)
+  tech_df_2 = tech_df_1.iloc[-1*days:]
   tech_df_1.dropna(inplace=True)
 
 # Creating a list of features to pass to the decision tree. 
 list_of_features = ['ATR', 'macd_useful', 'bb_upper', 'bb_lowerband', 'macdhist', 'rsi', 'stochastic_useful', 'useful_ma_44', 'obv']
 tech_df_1.dropna(inplace=True)
-index = int(0.8*len(tech_df_1))
+index = int(0.85*len(tech_df_1))
 X = tech_df_1[list_of_features].iloc[:index]
 y = np.where(tech_df_1.returns > 0, 1, 0)[:index]
 tech_df_1['Calls'] = np.where(tech_df_1.returns > 0, 1, 0)
@@ -255,6 +265,7 @@ y_pred = treeClassifier.predict(X_test)
 report = classification_report(y_test, y_pred, output_dict=True)
 
 # Profit calculation 
+index = -500
 y_pred_temp = treeClassifier.predict(tech_df_1[list_of_features][index:])
 X_closes = tech_df_1['close'].iloc[index:]
 pred_df = pd.DataFrame()
@@ -339,7 +350,7 @@ st.markdown(f'''
 
 
 tech_df_1['Calls'] = np.where(tech_df_1['Calls']==0, 'Sell', 'Buy')
-df = tech_df_1[:index]
+df = tech_df_1[:]
 plot_calls(df)
 plot_calls(pred_df)
 
@@ -348,7 +359,7 @@ report["Buy"] = report["1"]
 del report["0"], report["1"]
 st.table(pd.DataFrame(report))
 
-# Trying to compare analyse separation of calls. 
+'''# Trying to compare analyse separation of calls. 
 col1 = st.selectbox(
     'Pick Feature 1',
     tuple(list(tech_df_1.columns)[2:-1])
@@ -366,12 +377,14 @@ col3 = st.selectbox(
 
 fig = px.scatter_3d(data_frame=tech_df_1, x=col1, y=col2, z=col3, color='Calls')
 st.plotly_chart(fig)
-
+'''
 # Plotting the Decision Tree 
 # Keeping a fixed depth - otherwise too big. 
-# data = tree.export_graphviz(treeClassifier, filled=True, feature_names=list_of_features, class_names = {0:'Sell', 1:'Buy'}, out_file=None, max_depth=3)
-# st.graphviz_chart(data, use_container_width=True)
+data = tree.export_graphviz(treeClassifier, filled=True, feature_names=list_of_features, class_names = {0:'Sell', 1:'Buy'}, out_file=None, max_depth=3)
+st.graphviz_chart(data, use_container_width=True)
 
+'''
 # Report for the 20% of the data we did neither training or testing on. 
 report = classification_report(tech_df_1['Calls'][index:], pred_df['Calls'], output_dict=True)
 st.table(pd.DataFrame(report))
+'''
