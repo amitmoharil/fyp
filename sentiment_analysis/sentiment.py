@@ -22,23 +22,26 @@ auth = tw.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tw.API(auth, wait_on_rate_limit=True)
 
-search_words = "Reliance -filter:retweets"
+search_words = "Reliance Industries and stock -filter:retweets"
 
-tweets = api.search_tweets(q=search_words, count=10000, lang='en', tweet_mode='extended')
+tweets = api.search_tweets(q=search_words, count=10000, lang='en', tweet_mode='extended', result_type='recent')
 print(len(tweets))
 locations = [] 
 times = [] 
 count = 0 
-df = pd.DataFrame(columns=['text','time'])
+df = pd.DataFrame()
+tweets_list = [] 
 for i, tweet in enumerate(tweets):
     
     
     tweet = tweet._json
-    print(tweet['full_text'])
+    tweets_list.append(tweet['full_text'])
     if (not tweet["retweeted"]) and ('RT @' not in tweet["full_text"]):
         count += 1
+
         #df.append([str(tweet["full_text"]), str(tweet["location"]), str(tweet["time"])])
 
+df['Text'] = tweets_list
 print(df.head())
 print(len(tweets), count)
 # for tweet in tweets:
