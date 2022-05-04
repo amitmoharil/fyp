@@ -31,8 +31,9 @@ if opt == 'Sector-Wise':
     tuple(map(lambda x:x["Name"], sector_to_stocks[option_sector]))
   )
 
-  # To make model I need data of all stockss from the sector. 
-  for stock in tuple(map(lambda x:x["Name"], sector_to_stocks[option_sector])):
+  # To make model I need data of all stockss from the sector.
+  n = len(sector_to_stocks[option_sector]) 
+  for i, stock in enumerate(tuple(map(lambda x:x["Name"], sector_to_stocks[option_sector]))):
     symbol = stock_to_symbol[stock]["Symbol"]
     print(symbol, stock)
     stock_to_symbol = parse_meta_json()
@@ -59,7 +60,8 @@ if opt == 'Sector-Wise':
       # Save Data. 
       update_meta_json(stock, data=True)
       print('Updated!')
-      time.sleep(60)
+      if i!=n-1:
+        time.sleep(60)
     
   
   Xs = [] 
@@ -123,16 +125,15 @@ if opt == 'Sector-Wise':
     tech_df['useful_ma_44_percentage'] = (df['close']-tech_df['ma_44'])/df['close'] * 100
     tech_df['useful_ema_200_percentage'] = (df['close']-tech_df['ema_200'])/df['close'] * 100
 
-
-
     # ---------------------- #
     # Volume MA 
     tech_df['volume'] = df['volume']
     tech_df['ma_volume'] = talib.SMA(df['volume'], timeperiod=20)
     tech_df['ma_volume_percentage'] = (tech_df['ma_volume']-tech_df['volume']) / tech_df['volume'] * 100
     # ---------------------- #
+
     tech_df['ATR'] = talib.ATR(df['high'], df['low'], df['close'], timeperiod=14)
-    # print(tech_df.head())
+    
     # ---------------------- #
     days = 30
     tech_df_1 = tech_df.dropna().copy()
