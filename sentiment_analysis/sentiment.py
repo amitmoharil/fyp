@@ -33,7 +33,6 @@ df = pd.DataFrame()
 tweets_list = [] 
 for i, tweet in enumerate(tweets):
     
-    
     tweet = tweet._json
     tweets_list.append(tweet['full_text'])
     if (not tweet["retweeted"]) and ('RT @' not in tweet["full_text"]):

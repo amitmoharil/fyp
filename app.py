@@ -178,6 +178,7 @@ if opt == 'Sector-Wise':
   del report["0"], report["1"]
   st.table(pd.DataFrame(report))
 
+  st.write(f'{option_stock} Sector')
   y_pred_prime = treeClassifier.predict(X_tests_prime)
   report = classification_report(y_tests_prime, y_pred_prime, output_dict=True)
   report["Sell"] = report["0"]
@@ -225,7 +226,7 @@ else:
   print(days)
 
   ltp = df.at[df.index[-1], 'close']
-  amount_to_invest = st.number_input('Amount to Invest', min_value=0.0, max_value=1000000.0, value=ltp, step=0.01)
+  amount_to_invest = st.number_input('Amount to Invest', min_value=0.0, max_value=1e10, value=ltp, step=0.01)
 
   # For now this must never be true. 
   if not calculate_indicators:
@@ -323,7 +324,7 @@ else:
 
   # Profit Calculation given closes and calls
   # Add resistance and support here. 
-  def profit_calculator(pred_df):
+  def profit_calculator(pred_df, days, amount_to_invest):
     closes = [] 
     calls = []
 
@@ -338,8 +339,9 @@ else:
     investments = (0,0) 
     returns = (0,0) 
     investments_remaining = (0,0)
+    balance = amount_to_invest
 
-    for i in range(len(pred_df)-35):
+    for i in range(len(pred_df)-days):
       if calls[i] == 'Sell':
         if len(units)!=0:
           k = 0
@@ -351,10 +353,13 @@ else:
           units = units[k:]
           profit -= overheads_per_sell
       else:
-        investments = investments[0]+closes[i], investments[1]+1
-        investments_remaining = investments_remaining[0]+closes[i], investments_remaining[1]+1
-        
-        units.append(i)
+        # BUY 
+        # if balance is there and BUY call close to support then BUY 
+        if balance > closes[i]:
+          units.append(i)
+          investments = investments[0] + closes[i], investments[1] + 1   
+          investments_remaining = investments_remaining[0]+closes[i], investments_remaining[1]+1
+          balance -= closes[i]
 
       maximum = max(maximum, sum(map(lambda x: closes[x], units)))
 
@@ -388,7 +393,7 @@ else:
 
         <tr>
           <td>Profit percentage</td>
-          <td>{round((returns[0]-investments[0]) / investments[0]* 100,2)}% in {len(y_pred_temp)} days</td>
+          <td>{round((returns[0]-investments[0]) / investments[0]* 100,2)}% in {len(pred_df)} days</td>
         </tr> 
         <tr>
           <td>Maximum Investment</td>
@@ -400,12 +405,27 @@ else:
     ''', unsafe_allow_html=True)
 
 
-  index = -200
-  y_pred_temp = treeClassifier.predict(tech_df[list_of_features][index:])
-  pred_df = tech_df.iloc[index:].copy()
-  pred_df['Calls'] = np.where(y_pred_temp==0, 'Sell', 'Buy')
-  profit_calculator(pred_df)
+  # ''''''
+  # index = -200
+  # y_pred_temp = treeClassifier.predict(tech_df[list_of_features][index:])
+  # pred_df = tech_df.iloc[index:].copy()
+  # pred_df['Calls'] = np.where(y_pred_temp==0, 'Sell', 'Buy')
+  # profit_calculator(pred_df)
+  # ''''''
+  index1 = -200
+  pred_df = pd.DataFrame(columns = ['Close', 'Calls'])
+  for i in range(0, 199):
+    X = tech_df_1[list_of_features].iloc[:index1+i]
+    y = np.where(tech_df_1.returns > 0, 1, 0)[:index1+i]
+    X_train, X_test, y_train, y_test  = train_test_split(X, y, test_size=0.3, random_state=45)
+    treeClassifier = DecisionTreeClassifier(min_samples_split=20, max_depth=15)
+    treeClassifier.fit(X_train, y_train)
+    y_pred_temp = treeClassifier.predict(tech_df[list_of_features].iloc[index1+i:index1+i+1])
+    d = {'timestamp':[tech_df['timestamp'].iloc[index1+i]], 'low':[tech_df['low'].iloc[index1+i]], 'high':[tech_df['high'].iloc[index1+i]], 'close': [tech_df['close'].iloc[index1+i]], 'Calls': np.where(y_pred_temp==0, 'Sell', 'Buy')}
+    pred_df = pred_df.append(pd.DataFrame(d), ignore_index=True)
+    index += 1
 
+  profit_calculator(pred_df, days, amount_to_invest)
   call_latest = pred_df['Calls'].iloc[-1]
   polarity, string = twitter_sentiment(f'{option}')
   with st.container():
